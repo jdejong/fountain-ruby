@@ -72,14 +72,29 @@ module Fountain
 
         case options[:method]
         when :post then create_post_request path, headers, body
+        when :post_params then create_post_params_request path, headers, body
         when :put then create_put_request path, headers, body
         when :delete then create_delete_request path, headers
+        when :file then create_file_request path, headers, body, options[:file]
         else create_get_request path, headers, body
         end
       end
 
       def create_post_request(path, headers, body)
         req = Net::HTTP::Post.new(path, headers)
+        add_body(req, body) if body
+        req
+      end
+
+      def create_post_params_request(path, headers, body)
+        path += '?' + body.map { |k, v| "#{k}=#{v}" }.join('&') if body
+        req = Net::HTTP::Post.new(path, headers)
+        req
+      end
+
+      def create_file_request(path, headers, body, file)
+        _file = UploadIO.new(file, "application/octet-stream")
+        req = Net::HTTP::Post::Multipart.new(path, {file: _file}, headers)
         add_body(req, body) if body
         req
       end

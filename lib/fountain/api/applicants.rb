@@ -107,6 +107,23 @@ module Fountain
         Fountain::Applicant.new response
       end
 
+      def self.create_secure_document(applicant_id, file, file_key)
+
+        response = request_json("/v2/applicants/#{applicant_id}/secure_documents/upload",
+                                method: :file, file: file)
+
+        upload = Fountain::DocumentUpload.new response
+
+        response = request_json("/v2/applicants/#{applicant_id}/secure_documents/link_upload",
+                                method: :post_params,
+                                body: {
+                                    key: file_key,
+                                    s3_key: upload.key
+                                })
+        return response['uploaded'] if response && response.is_a?(Hash) && response.has_key?('uploaded')
+        false
+      end
+
       #
       # Get Applicant Documents
       # @param [String] applicant_id ID of the Fountain applicant
